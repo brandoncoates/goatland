@@ -2,8 +2,7 @@ name: Fetch Entertainment RSS
 
 on:
   schedule:
-    # Runs daily at 06:15 America/Denver (12:15 UTC)
-    - cron: '15 12 * * *'
+    - cron: "*/30 * * * *"  # every 30 minutes (UTC)
   workflow_dispatch:
 
 permissions:
