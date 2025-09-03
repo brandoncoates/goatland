@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Goatland",
-  description: "Goatland MVP � Entertainment, Sports, Today in History, Recipes",
+  description: "Goatland MVP â€“ Entertainment, Sports, Today in History, Recipes",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,3 +15,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

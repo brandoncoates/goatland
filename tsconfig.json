@@ -1,4 +1,4 @@
-{
+﻿{
   "compilerOptions": {
     "target": "ES2022",
     "lib": [
@@ -39,3 +39,4 @@
     "node_modules"
   ]
 }
+

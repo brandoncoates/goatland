@@ -1,4 +1,4 @@
-export default function Home() {
+﻿export default function Home() {
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-10">
       <header className="space-y-2">
@@ -36,3 +36,4 @@ export default function Home() {
     </main>
   );
 }
+
