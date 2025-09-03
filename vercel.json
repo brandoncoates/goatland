@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.goatland.net" }],
+      "destination": "https://goatland.net/$1",
+      "permanent": true
+    }
+  ]
+}
