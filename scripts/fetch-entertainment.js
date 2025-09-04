@@ -3,7 +3,9 @@
  * Fetch up to N stories from one or more Reddit subreddits' RSS feeds
  * and write them to data/entertainment.json for the homepage.
  *
- * Now captures BOTH the original article URL (if present) and the Reddit thread URL.
+ * Now also captures a short `summary` for each item:
+ *   1) Prefer RSS `contentSnippet` if present
+ *   2) Otherwise try the page's <meta name="description"> / og:description
  *
  * Env vars (optional):
  *   SUBREDDITS  Comma-separated list, e.g. "entertainment, movies" (default: "entertainment")
@@ -61,14 +63,11 @@ function firstExternalUrlFromText(text) {
 }
 
 function extractImage(item) {
-    // Try enclosure (media:thumbnail)
     if (item.enclosure && item.enclosure.url) return item.enclosure.url;
-    // Try <img src> inside content
     if (item.content) {
         const m = item.content.match(/<img[^>]+src="([^"]+)"/i);
         if (m) return m[1];
     }
-    // Fallback: any image URL in snippet
     if (item.contentSnippet) {
         const m2 = item.contentSnippet.match(/https?:\/\/\S+\.(?:jpg|jpeg|png|gif)/i);
         if (m2) return m2[0];
@@ -76,11 +75,35 @@ function extractImage(item) {
     return null;
 }
 
+function truncate(s, n = 240) {
+    if (!s) return null;
+    const t = s.replace(/\s+/g, " ").trim();
+    return t.length > n ? t.slice(0, n - 1) + "…" : t;
+}
+
+async function fetchMetaDescription(u) {
+    if (!u) return null;
+    try {
+        const res = await fetch(u, {
+            redirect: "follow",
+            headers: {
+                "user-agent": "GoatlandBot/1.0 (+https://goatland.net)",
+                accept: "text/html,application/xhtml+xml",
+            },
+        });
+        const html = await res.text();
+        const og = html.match(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+        const md = html.match(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+        const desc = (og && og[1]) || (md && md[1]);
+        return desc ? desc.trim() : null;
+    } catch {
+        return null;
+    }
+}
+
 function extractOriginalUrl(item) {
-    // Prefer a non-Reddit URL from HTML content
     const fromHtml = firstExternalUrlFromHtml(item.content);
     if (fromHtml) return fromHtml;
-    // Then try plaintext snippet
     const fromText = firstExternalUrlFromText(item.contentSnippet);
     if (fromText) return fromText;
     return null;
@@ -95,17 +118,32 @@ function extractOriginalUrl(item) {
         for (const it of feed.items || []) {
             const redditUrl = it.link;
             const origUrl = extractOriginalUrl(it);
-            items.push({
+
+            // Build the base record
+            const rec = {
                 id: it.guid || it.id || redditUrl,
                 title: it.title || "",
-                url: origUrl || redditUrl, // prefer original
+                url: origUrl || redditUrl, // prefer original when available
                 reddit: redditUrl || null, // keep the Reddit thread too
                 isoDate: it.isoDate ? new Date(it.isoDate).toISOString() : null,
                 author: it.author || null,
                 subreddit: sub,
                 source: "reddit",
                 image: extractImage(it),
-            });
+                summary: null,
+            };
+
+            // 1) Try the RSS snippet first
+            let summary = truncate(it.contentSnippet || "");
+
+            // 2) If missing/short and we have a non-Reddit URL, try meta description
+            if ((!summary || summary.length < 60) && rec.url && !isRedditHost(rec.url)) {
+                const meta = await fetchMetaDescription(rec.url);
+                if (meta) summary = truncate(meta);
+            }
+
+            rec.summary = summary || null;
+            items.push(rec);
         }
     }
 
