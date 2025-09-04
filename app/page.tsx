@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import data from "@/data/entertainment.json";
 
@@ -74,9 +75,23 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-10">
+      {/* Hero (no stretch: keep intrinsic size, centered) */}
+      <section aria-label="Hero" className="flex justify-center">
+        <Image
+          src="/images/welcome-hero.png"
+          alt="Welcome to Goatland"
+          width={1200}
+          height={400}
+          priority
+          sizes="(max-width: 768px) 100vw, 1200px"
+          style={{ width: "auto", height: "auto" }}
+          className="rounded-xl border max-w-full h-auto"
+        />
+      </section>
+
       <header className="space-y-2">
         <h1 className="text-3xl font-bold">Goatland</h1>
-        <p className="text-gray-600">MVP homepage</p>
+        <p className="text-gray-600">Headlines and happenings.</p>
       </header>
 
       {/* Entertainment — one featured only */}
@@ -173,3 +188,4 @@ export default function Home() {
     </main>
   );
 }
+
